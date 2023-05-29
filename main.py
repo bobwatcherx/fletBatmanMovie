@@ -7,12 +7,138 @@ import webbrowser
 def main(page:Page):
 	page.scroll = "auto"
 	page.window_width = 400
+
+
+	def submitnewpost(e):
+		try:
+			res = client.collection("movies_col").create({
+			    "poster": newposter.content.controls[0].value,
+				 "title": newposter.content.controls[1].value,
+			    "year": newposter.content.controls[2].value,
+			    "trailer": newposter.content.controls[3].value,
+			    "plot": newposter.content.controls[4].value,
+			    "genre": newposter.content.controls[5].value,
+			    "runtime": newposter.content.controls[6].value,
+
+				})
+			page.snack_bar = snack_open
+			snack_open.content.value = "success created movie"
+			snack_open.content.size = 30
+			page.snack_bar.open = True
+			newposter.open = False
+			getPostMovie.controls.clear()
+
+			post = client.collection("movies_col").get_full_list()
+				# print("hasilnya",post)
+			for x in post:
+				print(x.collection_id['id'])
+				getPostMovie.controls.append(
+						Column([
+						Row([
+							Image(src=x.collection_id['poster'],
+							fit="cover",
+							),
+							],alignment="center"),
+						Row([
+						Text(x.collection_id['title'],weight="bold",
+							size=25
+							),
+						Text(x.collection_id['year'],
+							weight="bold"
+							)
+							],alignment="spaceBetween"),
+						Row([
+							Container(
+								padding=10,
+								border_radius=30,
+								bgcolor="red200",
+								content=Text(x.collection_id['genre'])
+								)
+							,
+							TextButton("Watch Trailer",
+								data=x.collection_id['trailer'],
+								on_click=openyt
+								)
+							],alignment="spaceBetween"),
+						Row([
+							Text(x.collection_id['plot']),
+							],alignment="spaceBetween",
+							wrap=True
+							),
+						Row([
+							Text(x.collection_id['runtime']),
+							
+							]),
+						Row([
+							IconButton("create",
+							icon_color="purple",
+							data=x.collection_id['id'],
+							on_click=dialogcast
+								),
+							IconButton("comment",
+							icon_color="red",
+							data=x.collection_id['id'],
+							on_click=dialogcomment
+								)
+							],alignment="end"),
+						Divider()
+							])
+						)
+			page.update()
+		except Exception as e:
+			print(e)
+			page.snack_bar = snack_open
+			snack_open.content.value = e
+			snack_open.content.size = 30
+			snack_open.content.bgcolor = "red"
+			page.snack_bar.open = True
+			page.update()
+		page.update()
+
+
+	newposter = AlertDialog(
+		title=Text("new Poster"),
+		content=Column([
+			TextField(label="poster"),
+			TextField(label="title"),
+			TextField(label="year"),
+			TextField(label="trailer url video"),
+			TextField(label="plot"),
+			TextField(label="genre"),
+			TextField(label="runtime"),
+
+			],alignment="center"),
+		actions=[
+		ElevatedButton("Create New",
+			bgcolor="blue",
+			on_click=submitnewpost
+			)
+		],
+		actions_alignment="center"
+		)
+
+	def createnewposter(e):
+		page.dialog = newposter
+		newposter.open = True
+		page.update()
+
+
+	page.floating_action_button  = FloatingActionButton(
+		icon="add",
+		bgcolor="blue",
+		on_click=createnewposter,
+		visible=False  
+		)
+
 	movieId  = Text("")
 	is_login = False
 	snack_open = SnackBar(
 		content=Text(""),
 		)
 	getPostMovie = Column()
+
+
+
 	def registeruser(e):
 		try:
 			adduser = client.collection("users").create(body_params={
@@ -214,6 +340,8 @@ def main(page:Page):
 			page.session.set("keylogin",loginnow.token)
 			is_login = True
 			content_user.content.content = mycontent
+			page.floating_action_button.visible = True
+
 			page.snack_bar = snack_open
 			page.snack_bar.open = True
 			snack_open.content.size = 30
@@ -229,10 +357,12 @@ def main(page:Page):
 					print(x.collection_id['id'])
 					getPostMovie.controls.append(
 						Column([
-						Image(src=x.collection_id['poster'],
+						Row([
+							Image(src=x.collection_id['poster'],
 							height=250,
 							fit="cover",
 							),
+							],alignment="center"),
 						Row([
 						Text(x.collection_id['title'],weight="bold",
 							size=25
@@ -242,7 +372,13 @@ def main(page:Page):
 							)
 							],alignment="spaceBetween"),
 						Row([
-							Text(x.collection_id['genre']),
+							Container(
+								padding=10,
+								border_radius=30,
+								bgcolor="red200",
+								content=Text(x.collection_id['genre'])
+								)
+							,
 							TextButton("Watch Trailer",
 								data=x.collection_id['trailer'],
 								on_click=openyt
@@ -251,7 +387,9 @@ def main(page:Page):
 						Row([
 							Text(x.collection_id['plot']),
 							Text(x.collection_id['runtime']),
-							],alignment="spaceBetween"),
+							],alignment="spaceBetween",
+							wrap=True
+							),
 						Row([
 							IconButton("create",
 							icon_color="purple",
