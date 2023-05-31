@@ -175,10 +175,13 @@ def main(page:Page):
 
 	def sendcomment(e):
 		print("movie id ",movieId.value)
+		
+		print(mylogin.controls[1].value)
 		try:
 			msg = client.collection("comments_col").create({
 			"user_id":client.auth_store.model.collection_id['id'],
 			"movie_id":movieId.value,
+			"user_name":mylogin.controls[1].value,
 			"comments":mycomment.actions[0].controls[0].value
 			})
 			mycomment.content.controls.clear()
@@ -188,8 +191,10 @@ def main(page:Page):
 				mycomment.content.controls.append(
 				ListTile(
 					leading=Icon(name="account_circle"),
-
-					title=Text(b.collection_id['comments'])
+					title=Text(b.collection_id['comments']),
+					subtitle=Text(f"by {b.collection_id['user_name']}",
+						color="red200",
+					size=15)
 					)
 				)
 			mycomment.actions[0].controls[0].value = ""
@@ -200,7 +205,7 @@ def main(page:Page):
 
 	mycomment = AlertDialog(
 		title=Text("Comments"),
-		content=Column(alignment="start"),
+		content=Column(alignment="start",scroll="auto"),
 		actions=[
 		Column([
 			TextField(label="insert comment",
@@ -209,7 +214,7 @@ def main(page:Page):
 			IconButton("send",
 				on_click=sendcomment
 				)
-			])
+			],scroll = "auto")
 		]
 		)
 	def closedialogregister(e):
@@ -248,12 +253,17 @@ def main(page:Page):
 		mycomment.content.controls.clear()
 		comm = client.collection("comments_col").get_full_list()
 		filtered_comm = list(filter(lambda x: x.collection_id['movie_id'] == e.control.data, comm))
-
+		print(filtered_comm)
 		for b in filtered_comm:
 			mycomment.content.controls.append(
 			ListTile(
 				leading=Icon(name="account_circle"),
-				title=Text(b.collection_id['comments'])
+				title=Text(b.collection_id['comments']),
+				subtitle=Text(f"by {b.collection_id['user_name']}",
+					color="red200",
+					size=15
+					)
+
 				)
 			)
 		print(filtered_comm)
@@ -266,6 +276,7 @@ def main(page:Page):
 		try:
 			msg = client.collection("casts_col").create({
 			"movie_id":movieId.value,
+			"photo":mycast.actions[0].controls[2].value,
 			"persons":mycast.actions[0].controls[0].value,
 			"role":mycast.actions[0].controls[1].value
 			})
@@ -275,7 +286,7 @@ def main(page:Page):
 			for b in filtered_comm:
 				mycast.content.controls.append(
 				ListTile(
-					leading=Icon(name="account_circle"),
+					leading=Image(src=b.collection_id['photo']),
 					title=Column([
 						Text(b.collection_id['persons']),
 						Text(b.collection_id['role']),
@@ -285,20 +296,23 @@ def main(page:Page):
 				)
 			mycast.actions[0].controls[0].value = ""
 			mycast.actions[0].controls[1].value = ""
+			mycast.actions[0].controls[2].value = ""
 			page.update()
 		except Exception as e:
 			print(e)
 
 	mycast = AlertDialog(
-		content=Column(),
+		title=Text("Casts",weight="bold",size=25),
+		content=Column(scroll="auto"),
 		actions=[
 			Column([
 				TextField(label="add person"),
 				TextField(label="add role"),
+				TextField(label="Photo URL"),
 				ElevatedButton("submit",
 				on_click=addcastmodel
 				),
-				])
+				],scroll="auto")
 		],
 		actions_alignment="end"
 		)
@@ -313,7 +327,7 @@ def main(page:Page):
 		for b in filtered_comm:
 			mycast.content.controls.append(
 			ListTile(
-				leading=Icon(name="account_circle"),
+				leading=Image(src=b.collection_id['photo']),
 				title=Column([
 					Text(b.collection_id['persons']),
 					Text(b.collection_id['role']),
@@ -350,9 +364,9 @@ def main(page:Page):
 
 			# LOAD DATA
 			if not loginnow.token  == None:
-				
+				comm = client.collection("casts_col").get_full_list()
 				post = client.collection("movies_col").get_full_list()
-				# print("hasilnya",post)
+				print("hasilnya",post)
 				for x in post:
 					print(x.collection_id['id'])
 					getPostMovie.controls.append(
@@ -386,7 +400,15 @@ def main(page:Page):
 							],alignment="spaceBetween"),
 						Row([
 							Text(x.collection_id['plot']),
-							Text(x.collection_id['runtime']),
+							Container(
+								padding=10,
+								bgcolor="purple200",
+								border_radius=30,
+								content=Row([
+									Icon(name="timer"),
+									Text(x.collection_id['runtime'])
+									])
+								),
 							],alignment="spaceBetween",
 							wrap=True
 							),
@@ -462,6 +484,7 @@ def main(page:Page):
 	content_user = Card(
 				elevation=10,
 				content=Container(
+					margin=margin.only(bottom=50),
 					width=page.window_width,
 					padding=10,
 					bgcolor="white" if is_login == True else "yellow",
