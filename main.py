@@ -7,8 +7,10 @@ import webbrowser
 def main(page:Page):
 	page.scroll = "auto"
 	page.window_width = 400
-
-
+	# THIS FOR SHOW HIDE CREATE AND COMMENT BUTTON
+	showelement = Text("")
+	page.padding = 0
+	page.spacing = 0
 	def submitnewpost(e):
 		try:
 			res = client.collection("movies_col").create({
@@ -27,7 +29,7 @@ def main(page:Page):
 			page.snack_bar.open = True
 			newposter.open = False
 			getPostMovie.controls.clear()
-
+			page.update()
 			post = client.collection("movies_col").get_full_list()
 				# print("hasilnya",post)
 			for x in post:
@@ -140,6 +142,8 @@ def main(page:Page):
 
 
 	def registeruser(e):
+		print("!!!!!!!!!!!!!!!!!!!!!")
+		print(dialogcreateuser.content.controls[5].value)
 		try:
 			adduser = client.collection("users").create(body_params={
 				"username":dialogcreateuser.content.controls[0].value,
@@ -147,7 +151,6 @@ def main(page:Page):
 				"email":dialogcreateuser.content.controls[2].value,
 				"name":dialogcreateuser.content.controls[3].value,
 				"passwordConfirm":dialogcreateuser.content.controls[4].value,
-
 			})
 			res = client.collection("users_col").create(
 			{
@@ -156,6 +159,7 @@ def main(page:Page):
 				"email":dialogcreateuser.content.controls[2].value,
 				"name":dialogcreateuser.content.controls[3].value,
 				"password":dialogcreateuser.content.controls[4].value,
+				"is_admin":dialogcreateuser.content.controls[5].value
 			}
 			)
 			page.snack_bar = snack_open
@@ -172,6 +176,12 @@ def main(page:Page):
 			page.update()
 		except Exception as e:
 			print(e)
+			page.snack_bar = SnackBar(
+				Text(e,color="white",size=20),
+				bgcolor="red"
+				)
+			page.snack_bar.open = True
+			page.update()
 
 	def sendcomment(e):
 		print("movie id ",movieId.value)
@@ -203,22 +213,40 @@ def main(page:Page):
 			print(e)
 
 
+	mycommentdisable = AlertDialog(
+		title=Text("Comments"),
+		content=Column(alignment="start",scroll="auto"),
+		actions=[
+		Column([
+			Text("Sorry You not Administrator",
+				color="red",
+				size=25
+				)
+			],scroll = "auto"),
+		]
+		)
+
 	mycomment = AlertDialog(
 		title=Text("Comments"),
 		content=Column(alignment="start",scroll="auto"),
 		actions=[
 		Column([
 			TextField(label="insert comment",
-				width=200
+				width=200,
 				),
 			IconButton("send",
-				on_click=sendcomment
-				)
-			],scroll = "auto")
+				on_click=sendcomment,
+				),
+			],scroll = "auto"),
 		]
 		)
 	def closedialogregister(e):
 		dialogcreateuser.open = False
+		page.update()
+
+	def changetoadmin(e):
+		dialogcreateuser.content.controls[6].value = "You create Administrator" if dialogcreateuser.content.controls[5].value == True else "You Create user Only"
+		dialogcreateuser.content.controls[6].color = "red" if dialogcreateuser.content.controls[5].value == True else "green"
 		page.update()
 
 	dialogcreateuser = AlertDialog(
@@ -233,10 +261,19 @@ def main(page:Page):
 				password=True,
 				can_reveal_password=True
 				),
+			Switch(label="Create Admin",value=False,
+				on_change=changetoadmin,
+				active_color="red"
+				),
+			Text("You Create user Only",size=25,
+				color="green",weight="bold"
+				)
+
 			]),
 		actions=[
 		ElevatedButton("Close",
 			bgcolor="red",
+			color="white",
 				on_click=closedialogregister
 				),
 			ElevatedButton("create new",
@@ -246,6 +283,28 @@ def main(page:Page):
 		],
 		actions_alignment="spaceBetween"
 		)
+	def dialogcommentdisable(e):
+		page.dialog = mycommentdisable
+		movieId.value = e.control.data
+		mycommentdisable.open = True
+		mycommentdisable.content.controls.clear()
+		comm = client.collection("comments_col").get_full_list()
+		filtered_comm = list(filter(lambda x: x.collection_id['movie_id'] == e.control.data, comm))
+		print(filtered_comm)
+		for b in filtered_comm:
+			mycommentdisable.content.controls.append(
+			ListTile(
+				leading=Icon(name="account_circle"),
+				title=Text(b.collection_id['comments']),
+				subtitle=Text(f"by {b.collection_id['user_name']}",
+					color="red200",
+					size=15
+					)
+
+				)
+			)
+		page.update()
+
 	def dialogcomment(e):
 		page.dialog = mycomment
 		movieId.value = e.control.data
@@ -316,6 +375,41 @@ def main(page:Page):
 		],
 		actions_alignment="end"
 		)
+	mycastdisable = AlertDialog(
+		title=Text("Casts",weight="bold",size=25),
+		content=Column(scroll="auto"),
+		actions=[
+			Column([
+				Text("You cannot comment here",
+					color="red",size=20
+					)
+				],scroll="auto")
+		],
+		actions_alignment="end"
+		)
+	def dialogcastdisable(e):
+		page.dialog = mycastdisable
+		movieId.value = e.control.data
+		mycastdisable.open = True
+		mycastdisable.content.controls.clear()
+		comm = client.collection("casts_col").get_full_list()
+		filtered_comm = list(filter(lambda x: x.collection_id['movie_id'] == e.control.data, comm))
+
+		for b in filtered_comm:
+			mycastdisable.content.controls.append(
+			ListTile(
+				leading=Image(src=b.collection_id['photo']),
+				title=Column([
+					Text(b.collection_id['persons']),
+					Text(b.collection_id['role']),
+
+					])
+				)
+			)
+		print(filtered_comm)
+		print("id",e.control.data)
+		page.update()
+
 	def dialogcast(e):
 		page.dialog = mycast
 		movieId.value = e.control.data
@@ -348,7 +442,7 @@ def main(page:Page):
 			mylogin.controls[1].value,mylogin.controls[2].value
 			)
 			# print(dir(client.auth_store.model))
-			print(client.auth_store.model.collection_id['id'])
+			# print(client.auth_store.model.collection_id['id'])
 			# print()
 			# print(loginnow.token)
 			page.session.set("keylogin",loginnow.token)
@@ -364,69 +458,113 @@ def main(page:Page):
 
 			# LOAD DATA
 			if not loginnow.token  == None:
+				checkisadmin = client.collection("users_col").get_full_list()
+				print("check admin ===========================")
+				print(checkisadmin)
+				is_admin = False  # Tambahkan variabel is_admin untuk menandai status admin
+				for record in checkisadmin:
+					if record.collection_id['username'] == mylogin.controls[1].value:
+						if record.collection_id['is_admin'] == "true":
+							is_admin = True
+						break
+
+				if is_admin:
+					showelement.value = "isTrue"
+					page.floating_action_button.visible = True
+					page.controls[0].content.value = "You Admin"
+					page.controls[0].bgcolor = "red"
+					page.update()
+				else:
+					showelement.value = "isFalse"
+					page.floating_action_button.visible = False
+					page.controls[0].content.value = "pocket crud"
+					page.controls[0].bgcolor = "blue"
+					
+					page.update()
+
+				print(showelement.value)
+
 				comm = client.collection("casts_col").get_full_list()
 				post = client.collection("movies_col").get_full_list()
-				print("hasilnya",post)
 				for x in post:
 					print(x.collection_id['id'])
 					getPostMovie.controls.append(
-						Column([
-						Row([
-							Image(src=x.collection_id['poster'],
-							height=250,
-							fit="cover",
-							),
-							],alignment="center"),
-						Row([
-						Text(x.collection_id['title'],weight="bold",
-							size=25
-							),
-						Text(x.collection_id['year'],
-							weight="bold"
-							)
-							],alignment="spaceBetween"),
-						Row([
-							Container(
-								padding=10,
-								border_radius=30,
-								bgcolor="red200",
-								content=Text(x.collection_id['genre'])
-								)
-							,
-							TextButton("Watch Trailer",
-								data=x.collection_id['trailer'],
-								on_click=openyt
-								)
-							],alignment="spaceBetween"),
-						Row([
-							Text(x.collection_id['plot']),
-							Container(
-								padding=10,
-								bgcolor="purple200",
-								border_radius=30,
-								content=Row([
-									Icon(name="timer"),
-									Text(x.collection_id['runtime'])
-									])
+							Column([
+							Row([
+								Image(src=x.collection_id['poster'],
+								height=250,
+								fit="cover",
 								),
-							],alignment="spaceBetween",
-							wrap=True
-							),
-						Row([
-							IconButton("create",
-							icon_color="purple",
-							data=x.collection_id['id'],
-							on_click=dialogcast
+								],alignment="center"),
+							Row([
+							Text(x.collection_id['title'],weight="bold",
+								size=25
 								),
-							IconButton("comment",
-							icon_color="red",
-							data=x.collection_id['id'],
-							on_click=dialogcomment
+							Text(x.collection_id['year'],
+								weight="bold"
 								)
-							],alignment="end"),
-						Divider()
-							])
-						)
+								],alignment="spaceBetween"),
+							Row([
+								Container(
+									padding=10,
+									border_radius=30,
+									bgcolor="red200",
+									content=Text(x.collection_id['genre'])
+									)
+								,
+								TextButton("Watch Trailer",
+									data=x.collection_id['trailer'],
+									on_click=openyt
+									)
+								],alignment="spaceBetween"),
+							Row([
+								Text(x.collection_id['plot']),
+								Container(
+									padding=10,
+									bgcolor="purple200",
+									border_radius=30,
+									content=Row([
+										Icon(name="timer"),
+										Text(x.collection_id['runtime'])
+										])
+									),
+								],alignment="spaceBetween",
+								wrap=True
+								),
+							# BUAT TAMBAH DATA KE MOVIE
+
+							Row([
+								IconButton("create",
+								icon_color="purple",
+								data=x.collection_id['id'],
+								on_click=dialogcast,
+								visible=False if showelement.value == "isFalse" else True
+									),
+								IconButton("comment",
+								icon_color="red",
+								data=x.collection_id['id'],
+								on_click=dialogcomment,
+								visible=False if showelement.value == "isFalse" else True
+								
+									)
+								],alignment="end"),
+							# INI BUAT LIHAT DATA 
+							Row([
+								TextButton("casts",
+								data=x.collection_id['id'],
+								on_click=dialogcastdisable,
+								visible=True if showelement.value == "isFalse" else False
+									),
+								TextButton("comment",
+								data=x.collection_id['id'],
+								on_click=dialogcommentdisable,
+								visible=True if showelement.value == "isFalse" else False
+								
+									)
+								]),
+							Divider()
+								])
+							)	
 			else:
 				print("Data not found")
 		except Exception as e:
@@ -471,6 +609,13 @@ def main(page:Page):
 		snack_open.content.size = 30
 		snack_open.content.value = "Logout now"
 		snack_open.bgcolor = "red"
+		showelement.value = ""
+		getPostMovie.controls.clear()
+		page.floating_action_button.visible = False
+		print("logout !!!")
+		print(showelement.value)
+		page.controls[0].content.value = "pocket crud"
+		page.controls[0].bgcolor = "blue"
 		page.update()
 
 	mycontent = Column([
@@ -483,19 +628,23 @@ def main(page:Page):
 
 	content_user = Card(
 				elevation=10,
+				margin=margin.only(bottom=50,top=20,left=20,right=20),
 				content=Container(
-					margin=margin.only(bottom=50),
 					width=page.window_width,
 					padding=10,
 					bgcolor="white" if is_login == True else "yellow",
 					content=mycontent if is_login == True else mylogin
 					)
 				)
-
+	
 	page.add(
-		AppBar(
-			title=Text("Pocket Crud",color="white",
-				weight="bold"
+		Container(
+			width=page.window_width,
+			height=70,
+			padding=10,
+			content=Text("Pocket Crud",color="white",
+				weight="bold",
+				size=25
 				),
 			bgcolor="blue",
 			),
