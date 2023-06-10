@@ -213,18 +213,7 @@ def main(page:Page):
 			print(e)
 
 
-	mycommentdisable = AlertDialog(
-		title=Text("Comments"),
-		content=Column(alignment="start",scroll="auto"),
-		actions=[
-		Column([
-			Text("Sorry You not Administrator",
-				color="red",
-				size=25
-				)
-			],scroll = "auto"),
-		]
-		)
+	
 
 	mycomment = AlertDialog(
 		title=Text("Comments"),
@@ -283,27 +272,7 @@ def main(page:Page):
 		],
 		actions_alignment="spaceBetween"
 		)
-	def dialogcommentdisable(e):
-		page.dialog = mycommentdisable
-		movieId.value = e.control.data
-		mycommentdisable.open = True
-		mycommentdisable.content.controls.clear()
-		comm = client.collection("comments_col").get_full_list()
-		filtered_comm = list(filter(lambda x: x.collection_id['movie_id'] == e.control.data, comm))
-		print(filtered_comm)
-		for b in filtered_comm:
-			mycommentdisable.content.controls.append(
-			ListTile(
-				leading=Icon(name="account_circle"),
-				title=Text(b.collection_id['comments']),
-				subtitle=Text(f"by {b.collection_id['user_name']}",
-					color="red200",
-					size=15
-					)
-
-				)
-			)
-		page.update()
+	
 
 	def dialogcomment(e):
 		page.dialog = mycomment
@@ -557,7 +526,7 @@ def main(page:Page):
 									),
 								TextButton("comment",
 								data=x.collection_id['id'],
-								on_click=dialogcommentdisable,
+								on_click=dialogcomment,
 								visible=True if showelement.value == "isFalse" else False
 								
 									)
