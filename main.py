@@ -11,6 +11,8 @@ def main(page:Page):
 	showelement = Text("")
 	page.padding = 0
 	page.spacing = 0
+	movierate = Text(1,size=20,weight="bold")
+
 	def submitnewpost(e):
 		try:
 			res = client.collection("movies_col").create({
@@ -192,7 +194,8 @@ def main(page:Page):
 			"user_id":client.auth_store.model.collection_id['id'],
 			"movie_id":movieId.value,
 			"user_name":mylogin.controls[1].value,
-			"comments":mycomment.actions[0].controls[0].value
+			"comments":mycomment.actions[0].controls[0].value,
+			"ratting":int(movierate.value)
 			})
 			mycomment.content.controls.clear()
 			comm = client.collection("comments_col").get_full_list()
@@ -200,33 +203,55 @@ def main(page:Page):
 			for b in filtered_comm:
 				mycomment.content.controls.append(
 				ListTile(
-					leading=Icon(name="account_circle"),
-					title=Text(b.collection_id['comments']),
-					subtitle=Text(f"by {b.collection_id['user_name']}",
-						color="red200",
-					size=15)
-					)
+				leading=Icon(name="account_circle"),
+				title=Row([
+					Text(b.collection_id['user_name'],weight="bold"),
+					Text(f"{b.collection_id['ratting']} likes",size=15,color="green",
+						weight="bold"
+						),
+					],alignment="spaceBetween"),
+				subtitle=Row([
+					Text(b.collection_id['comments'],
+					size=15,
+					),
+					],alignment="spaceBetween",wrap=True)
+
+				)
 				)
 			mycomment.actions[0].controls[0].value = ""
+			movierate.value = 1
+			mycomment.actions[1].controls[1].value= 1
 			page.update()
 		except Exception as e:
 			print(e)
 
 
-	
+	def changeratemovie(e):
+		movierate.value = int(e.control.value)
+		page.update()
 
 	mycomment = AlertDialog(
 		title=Text("Comments"),
 		content=Column(alignment="start",scroll="auto"),
 		actions=[
-		Column([
+		Row([
 			TextField(label="insert comment",
-				width=200,
+				width=170,
 				),
 			IconButton("send",
 				on_click=sendcomment,
 				),
 			],scroll = "auto"),
+		Column([
+			Row([
+			movierate,
+			Icon(name="thumb_up",size=25)
+				],alignment="center"),
+			Slider(min=1,max=5,value=movierate.value,
+				on_change=changeratemovie,
+				active_color="red"
+				)
+			])
 		]
 		)
 	def closedialogregister(e):
@@ -286,11 +311,17 @@ def main(page:Page):
 			mycomment.content.controls.append(
 			ListTile(
 				leading=Icon(name="account_circle"),
-				title=Text(b.collection_id['comments']),
-				subtitle=Text(f"by {b.collection_id['user_name']}",
-					color="red200",
-					size=15
-					)
+				title=Row([
+					Text(b.collection_id['user_name'],weight="bold"),
+					Text(f"{b.collection_id['ratting']} likes",size=15,color="green",
+						weight="bold"
+						),
+					],alignment="spaceBetween"),
+				subtitle=Row([
+					Text(b.collection_id['comments'],
+					size=15,
+					),
+					],alignment="spaceBetween",wrap=True)
 
 				)
 			)
