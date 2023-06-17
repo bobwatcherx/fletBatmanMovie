@@ -184,6 +184,49 @@ def main(page:Page):
 				)
 			page.snack_bar.open = True
 			page.update()
+	def removecomment(e):
+		delid = e.control.data['id']
+		print("))))))))))")
+		print(delid)
+		print("dd",movieId.value)
+
+		try:
+			deletefun = client.collection("comments_col").delete(delid)
+			mycomment.content.controls.clear()
+			page.update()
+			comm = client.collection("comments_col").get_full_list()
+			filtered_comm = list(filter(lambda x: x.collection_id['movie_id'] == movieId.value, comm))
+			checkIsUser = client.auth_store.model.collection_id['username']
+
+
+			print(filtered_comm)
+			for b in filtered_comm:
+				mycomment.content.controls.append(
+				ListTile(
+					leading=Icon(name="account_circle"),
+					title=Row([
+						Text(b.collection_id['user_name'],weight="bold"),
+						Text(f"{b.collection_id['ratting']} likes",size=15,color="green",
+							weight="bold"
+							),
+						],alignment="spaceBetween"),
+					subtitle=Row([
+						Text(b.collection_id['comments'],
+						size=15,
+						),
+						IconButton(icon="delete",icon_color="red",
+							data=b.collection_id,
+							on_click=removecomment,
+							visible=True if checkIsUser == b.collection_id['user_name'] else False
+							)
+						],alignment="spaceBetween",wrap=True)
+
+					)
+				)
+			page.update()
+		except Exception as e:
+			print(e)
+		page.update()
 
 	def sendcomment(e):
 		print("movie id ",movieId.value)
@@ -200,6 +243,10 @@ def main(page:Page):
 			mycomment.content.controls.clear()
 			comm = client.collection("comments_col").get_full_list()
 			filtered_comm = list(filter(lambda x: x.collection_id['movie_id'] == movieId.value, comm))
+			
+			checkIsUser = client.auth_store.model.collection_id['username']
+			
+
 			for b in filtered_comm:
 				mycomment.content.controls.append(
 				ListTile(
@@ -214,6 +261,12 @@ def main(page:Page):
 					Text(b.collection_id['comments'],
 					size=15,
 					),
+					IconButton(icon="delete",icon_color="red",
+						data=b.collection_id,
+						on_click=removecomment,
+						visible=True if checkIsUser == b.collection_id['user_name'] else  False
+						
+						)
 					],alignment="spaceBetween",wrap=True)
 
 				)
@@ -306,6 +359,9 @@ def main(page:Page):
 		mycomment.content.controls.clear()
 		comm = client.collection("comments_col").get_full_list()
 		filtered_comm = list(filter(lambda x: x.collection_id['movie_id'] == e.control.data, comm))
+		checkIsUser = client.auth_store.model.collection_id['username']
+
+
 		print(filtered_comm)
 		for b in filtered_comm:
 			mycomment.content.controls.append(
@@ -321,6 +377,11 @@ def main(page:Page):
 					Text(b.collection_id['comments'],
 					size=15,
 					),
+					IconButton(icon="delete",icon_color="red",
+						data=b.collection_id,
+						on_click=removecomment,
+						visible=True if checkIsUser == b.collection_id['user_name'] else False
+						)
 					],alignment="spaceBetween",wrap=True)
 
 				)
@@ -479,7 +540,8 @@ def main(page:Page):
 					page.floating_action_button.visible = False
 					page.controls[0].content.value = "pocket crud"
 					page.controls[0].bgcolor = "blue"
-					
+					print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+					print(client.auth_store.model.collection_id)
 					page.update()
 
 				print(showelement.value)
