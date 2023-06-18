@@ -267,7 +267,12 @@ def main(page:Page):
 						visible=True if checkIsUser == b.collection_id['user_name'] else  False
 						
 						)
-					],alignment="spaceBetween",wrap=True)
+					],alignment="spaceBetween",wrap=True),
+				trailing=IconButton(icon="create",
+					data=b.collection_id,
+					on_click=editcomment,
+					visible=True if checkIsUser == b.collection_id['user_name'] else False
+					)
 
 				)
 				)
@@ -350,7 +355,67 @@ def main(page:Page):
 		],
 		actions_alignment="spaceBetween"
 		)
-	
+	def closedialogeditcomment(e):
+		dialogeditcomment.open = False
+		dialogcomment.open = True
+		page.update()
+
+
+	def updatecomment(e):
+		upcommentid = dialogeditcomment.content.controls[0].value
+		data = {
+		"comments":dialogeditcomment.content.controls[1].value
+		}
+		try:
+			res = client.collection("comments_col").update(upcommentid,data)
+			page.snack_bar = SnackBar(
+				content=Text("Update Comment Success",size=25),
+				bgcolor="green"
+				)
+			dialogeditcomment.open = False
+			page.snack_bar.open = True
+		except Exception as e:
+			page.snack_bar = SnackBar(
+				content=Text(e,size=25),
+				bgcolor="red"
+				)
+			page.snack_bar.open = True
+		page.update()
+	dialogeditcomment = AlertDialog(
+		title=Row([
+			IconButton(icon="arrow_left",
+				on_click=closedialogeditcomment
+				),
+			Text("edit Comments",weight="bold",size=25)
+			]),
+		content=Column([
+			Text(visible=False),
+			TextField(label="Comments")
+			]),
+		actions=[
+		ElevatedButton("Update Comment",
+			bgcolor="yellow",
+			on_click=updatecomment
+			)
+		],
+		actions_alignment="center"
+
+		)
+
+
+
+	def editcomment(e):
+		data = e.control.data
+		print("$$$$$!@")
+		print(data)
+		dialogcomment.open = False
+		dialogeditcomment.content.controls[0].value = data['id']
+		dialogeditcomment.content.controls[1].value = data['comments']
+		page.dialog = dialogeditcomment
+		dialogeditcomment.open = True
+		page.update()
+
+
 
 	def dialogcomment(e):
 		page.dialog = mycomment
@@ -381,8 +446,13 @@ def main(page:Page):
 						data=b.collection_id,
 						on_click=removecomment,
 						visible=True if checkIsUser == b.collection_id['user_name'] else False
-						)
-					],alignment="spaceBetween",wrap=True)
+						),
+					],alignment="spaceBetween",wrap=True),
+				trailing=IconButton(icon="create",
+					data=b.collection_id,
+					on_click=editcomment,
+					visible=True if checkIsUser == b.collection_id['user_name'] else False
+					)
 
 				)
 			)
